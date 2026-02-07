@@ -1,0 +1,49 @@
+pipeline {
+  agent any
+
+  environment {
+    IMAGE_NAME = "panchalmeet/frontend"
+  }
+
+  stages {
+
+    stage('Checkout Code') {
+      steps {
+        checkout scm
+      }
+    }
+
+    stage('Build Docker Image') {
+      steps {
+        sh '''
+          cd front-end-nextjs
+          docker build -t $IMAGE_NAME:$BUILD_NUMBER .
+        '''
+      }
+    }
+
+    stage('Push Docker Image') {
+      steps {
+        withCredentials([
+          string(credentialsId: 'dockerhub-pass', variable: 'DOCKER_PASS')
+        ]) {
+          sh '''
+            echo "$DOCKER_PASS" | docker login -u panchalmeet --password-stdin
+            docker push $IMAGE_NAME:$BUILD_NUMBER
+          '''
+        }
+      }
+    }
+
+    stage('Deploy to GKE') {
+      steps {
+        sh '''
+          kubectl set image deployment/frontend-deployment \
+            frontend=$IMAGE_NAME:$BUILD_NUMBER
+
+          kubectl rollout status deployment/frontend-deployment
+        '''
+      }
+    }
+  }
+}

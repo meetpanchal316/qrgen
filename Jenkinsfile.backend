@@ -38,12 +38,17 @@ pipeline {
     }
 
     stage('Deploy to GKE') {
-      steps {
-        sh '''
-          kubectl set image deployment/backend-deployment \
-            backend=$IMAGE_NAME:$BUILD_NUMBER
-        '''
-      }
+       steps {
+     withCredentials([file(credentialsId: 'gcp-sa-key', variable: 'GCP_KEY')]) {
+       sh '''
+         gcloud auth activate-service-account --key-file=$GCP_KEY
+         gcloud config set project totemic-life-473009-q3       
+
+         kubectl set image deployment/backend-deployment \
+           backend=$IMAGE_NAME:$BUILD_NUMBER
+       '''
+     }
+    }
     }
   }
 }

@@ -1,0 +1,27 @@
+version: '3.8'
+
+services:
+  backend:
+    image: backend:v1
+    build: 
+      context: ./api
+      dockerfile: Dockerfile
+    container_name: backend_for_capstone
+    restart: unless-stopped
+    ports:
+      - 8000:8000
+    env_file:
+      - ./api/.env
+  frontend:
+    image: qr-frontend:v1
+    build: 
+      context: ./front-end-nextjs
+      dockerfile: Dockerfile
+    container_name: frontend_for_capstone
+    depends_on:
+      - backend
+    environment:
+      - NEXT_PUBLIC_BACKEND_URL=http://backend:8000
+    restart: unless-stopped
+    ports:
+      - 3000:3000
